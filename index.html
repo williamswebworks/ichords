@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>iChords</title>
+		<style type="text/css" media="screen">@import "jqtouch/jqtouch/jqtouch.min.css";</style>
+		<style type="text/css" media="screen">@import "jqtouch/themes/apple/theme.min.css";</style>
+		<style type="text/css" media="screen">
+ 
+		</style>
+		<script src="jqtouch/jqtouch/jquery.1.3.2.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="jqtouch/jqtouch/jqtouch.min.js" type="application/x-javascript" charset="utf-8"></script>
+		<script type="text/javascript" charset="utf-8">
+					
+			
+			var jQT = $.jQTouch({
+				icon: 'icon.png',
+				startupScreen: 'startup.png',
+				statusBar: 'black'
+			});
+		  
+			var IChords = function() {
+
+				Storage.prototype.setObject = function(key, value) {
+				    this.setItem(key, JSON.stringify(value));
+				}
+				Storage.prototype.getObject = function(key) {
+				    return this.getItem(key) && JSON.parse(this.getItem(key));
+				}
+				
+				var chords = {
+					'Emaj' : {s1:'x', s2:'o', s3:'8', s4:'8', s5:'6', s6:'o'},
+					'Emin' : ''				
+				}
+				
+				var drawChord = function() {
+					var ctx = document.getElementById('chordDrawing').getContext('2d');
+
+					for(var i=50;i<=100;i=i+10) {
+						ctx.beginPath();
+						ctx.moveTo(i, 0);
+						ctx.lineTo(i,200);
+						ctx.strokeStyle = "#000";
+						ctx.stroke();
+					}
+
+				 	ctx.beginPath(); // the circle
+				    ctx.fillStyle = "#ff0000";
+				    ctx.arc(50, 100, 6, 0, 2*Math.PI, true);
+				    ctx.closePath();
+				    ctx.fill();
+
+				 	ctx.beginPath(); // the circle
+				    ctx.fillStyle = "#ff0000";
+				    ctx.arc(60, 120, 6, 0, 2*Math.PI, true);
+				    ctx.closePath();
+				    ctx.fill();
+				}
+				
+				var bookmarkChord = function(chord) {
+					var favChords = localStorage.getObject('favChords');
+					if (!favChords) {
+						favChords = {chords:[]};
+					}
+					favChords.chords.push(chord);
+					localStorage.setObject('favChords', favChords);
+				}
+				
+				var bookmarks = function() {
+					var favChords = localStorage.getObject('favChords');
+					return favChords.chords;
+				}
+				
+				var isBookmarked = function(chord) {
+					return $.inArray(chord, bookmarks());
+				}
+				
+				return {drawChord:drawChord,
+						bookmarks:bookmarks,
+						bookmarkChord:bookmarkChord,
+						isBookmarked:isBookmarked
+						};
+			}();
+
+			$(document).ready(function() {
+
+				var subChords = ['maj', 'min', '7', 'sus7'];
+
+				$('.chord').click(function(event) {
+					var chord = $(this).text();
+					$('#subchords .toolbar h1').text(chord + ' Chords');
+					
+					$('#subchords #chords').empty();
+					$.each(subChords, function(index, subChord) { 
+						$('#subchords #chords').append('<li class="arrow"><a href="#details" class="subchord">' + chord  + subChord + '</a></li>');
+					});
+					
+					// load details
+					$('.subchord').click(function(event) {
+						var subChord = $(this).text();
+						$('#details .toolbar h1').text(subChord);
+						
+					
+						// highlight bookmark button if this chord is bookmarked
+						if (IChords.isBookmarked(subChord)) {
+							$('#favoriteButton').addClass('blueButton');
+						}
+						
+						IChords.drawChord();
+					});
+				});
+				
+				
+				$('#favoriteButton').click(function() {
+					var chord = $('#details .toolbar h1').text();
+					
+					if (IChord.isBookmarked(chord)) {
+						$('#favoriteButton').removeClass('blueButton');
+					} else {
+						$('#favoriteButton').addClass('blueButton');
+						IChords.bookmarkChord(chord);
+						alert(chord + ' added to favorites');
+					}
+					
+				
+				});
+
+				// load Bookmarks
+				$('#favoriteLink').click(function() {
+					$('#favorites #favoriteChords').empty();
+					var favChords = IChords.bookmarks();
+					if (favChords) {
+						$.each(favChords, function(index, chord) { 
+							$('#favorites #favoriteChords').append('<li class="arrow"><a href="#details" class="subchord">' + chord + '</a></li>');
+						});
+						$('.subchord', '#favorites #favoriteChords').click(function(event) {
+							var subChord = $(this).text();
+							$('#details .toolbar h1').text(subChord);
+							IChords.drawChord();
+						});
+					}					
+				});					
+				
+			});
+
+		</script>
+	</head>
+	<body>
+		<div id="mainchords">
+			<div class="toolbar">
+				<h1>iChords</h1>
+			</div>
+			<ul id="chords" class="edgetoedge">
+				<li class="arrow"><a href="#favorites" class="favorites" id="favoriteLink">Bookmarks</a></li>
+				<li class="arrow"><a href="#subchords" class="chord">E</a></li>
+				<li class="arrow"><a href="#subchords" class="chord">A</a></li>
+				<li class="arrow"><a href="#subchords" class="chord">D</a></li>
+				<li class="arrow"><a href="#subchords" class="chord">G</a></li>
+				<li class="arrow"><a href="#subchords" class="chord">B</a></li>
+				<li class="arrow"><a href="#subchords" class="chord">e</a></li>
+			</ul>
+		</div>
+		<div id="subchords">
+			<div class="toolbar">
+				<h1>SubChord</h1>
+				<a class="button back" href="#">Back</a>
+			</div>
+			<ul id="chords" class="edgetoedge">
+			</ul>
+		</div>
+		<div id="details">
+			<div class="toolbar">
+				<h1>Details</h1>
+				<a class="button back" href="#">Back</a>
+				<a class="button" id="favoriteButton" href="#">Bookmark</a>
+			</div>
+			<div id="chordDetail">
+				<canvas id="chordDrawing" class="edgetoedge"></canvas>
+			</div>	
+		</div>
+		<div id="favorites">
+			<div class="toolbar">
+				<h1>Favorites</h1>
+				<a class="button back" href="#">Back</a>
+			</div>
+			<ul id="favoriteChords" class="edgetoedge">
+			</ul>
+		</div>
+	</body>
+</html>
